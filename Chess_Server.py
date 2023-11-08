@@ -2,7 +2,7 @@
 """
 Server
 
-@author: Joseph Sierra
+@author: Joseph Sierra, Jasper On,  Luke Phillips
 """
 import socket
 Port = 1337
