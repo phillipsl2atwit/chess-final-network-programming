@@ -374,7 +374,7 @@ while True:
                     if Chess.selectedPiece != None:
                         p = game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]]
                         if p.team == Chess.team:
-                            if (p.piece == types.pawn) and (Chess.selectedPiece[1] == (1 if p.team == teams.white else 6)): # Promotion setup
+                            if (p.piece == types.pawn) and (Chess.selectedPiece[1] == (1 if p.team == teams.white else 6)) and ((x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]) in game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0],Chess.selectedPiece[1],game.board,Chess.enPassents)): # Promotion setup
                                 Chess.promoteGui = True
                                 Chess.promoteMove = [x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]]
                             # If the move is legal, do it
@@ -423,5 +423,5 @@ while True:
 #   server stuff:
 #       static server that matches clients
 #       clients are hybrid, once they're matched they just communicate with each other
-#
+# IF YOU CAN PROMOTE AND YOU CLICK ON A NONE TILE IT CRASHES AND BRINGS UP PROMOTION MENU
 # clean utility stuff like prints
