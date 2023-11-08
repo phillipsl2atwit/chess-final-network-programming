@@ -330,6 +330,9 @@ class Chess:
             return 2 # Checkmate
         else:
             return 1 # Stalemate
+        
+    def createClient(self):
+        print("Creating client from client.py")
             
 # Initialize game
 game = Chess()
@@ -418,10 +421,10 @@ while True:
 
 
 # TODO:
+# thread the multiplayer server, easier if imported from another file
 # multiplayer limited
 #   turns (done so far)
 #   server stuff:
 #       static server that matches clients
 #       clients are hybrid, once they're matched they just communicate with each other
-# IF YOU CAN PROMOTE AND YOU CLICK ON A NONE TILE IT CRASHES AND BRINGS UP PROMOTION MENU
 # clean utility stuff like prints
