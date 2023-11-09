@@ -22,7 +22,6 @@ def clientThread(recvFrom, sendTo):
         else:
             data.extend(recvFrom.recv(data[1]))
             sendTo.sendall(data)
-            print(f"{recvFrom}\n{data}")
 
 while True:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

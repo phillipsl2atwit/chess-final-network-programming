@@ -246,7 +246,6 @@ class Chess:
             board[x + move[0] - dir][y] = board[rookX][y]
             board[rookX][y] = Piece()
         # Move the piece
-        print(f"({x},{y}) ({move[0]},{move[1]})")
         team = board[x][y].team
         board[x][y].moved = True
         board[x + move[0]][y + move[1]] = board[x][y]
@@ -348,7 +347,6 @@ class Chess:
     
     def opponentMoved(self, piece, move):
         self.finalMovePiece(piece[0],piece[1],move)
-        #print(f"{piece}, {move}")
             
 # Initialize game
 game = Chess()
