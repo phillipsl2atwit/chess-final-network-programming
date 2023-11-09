@@ -1,6 +1,13 @@
+"""
+Chess
+
+@author: Joseph Sierra
+@author: Luke Phillips
+"""
 import numpy as np
 import pygame as pg
 import pygame.draw as dr
+import Chess_Client
 
 # Creates a circle that looks nice as a grid of pixels
 # Each pixel = 1/(1+e^(-dist)), where dist = sqrt((x-29.5)^2+(y-29.5)^2) (29.5,29.5) is the center
@@ -176,6 +183,7 @@ class Chess:
     def __init__(self):
         self.board = [[Piece() for x in range(8)] for y in range(8)]
         self.createBoard()
+        self.client = self.createClient()
 
     # Creates the default chess board
     def createBoard(self):
@@ -331,13 +339,13 @@ class Chess:
         else:
             return 1 # Stalemate
         
+    # Creates a client thread from client.py, called in constructor
     def createClient(self):
         print("Creating client from client.py")
             
 # Initialize game
 game = Chess()
 Chess.team = teams.white
-
 
 # Initialize draw
 width = 480
@@ -422,6 +430,7 @@ while True:
 
 # TODO:
 # thread the multiplayer server, easier if imported from another file
+# ^ 2 threads for it, one for the chat, the other for the game messages
 # multiplayer limited
 #   turns (done so far)
 #   server stuff:
