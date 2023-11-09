@@ -23,15 +23,14 @@ class Client:
 
         print("You are now connected")
 
+    def chat(self):
         #Chat logic
         while True:
-            data = input(" \n")
+            data = input("\n")
             if data.lower() == "end":
                 self.sendEnd()
                 break
-            print(data)
-            #self.sendChat(data)
-            self.sendChess((1,2),(3,4))
+            self.sendChat(data)
 
         self.SocketReference.close()
 
@@ -63,19 +62,18 @@ class Client:
     def recv(self, socket, callback):
         while True:
             header = socket.recv(2)
-            print(header)
             if not header:
                 break
             if header[0] == 1: #end parrot and kill loop
-                print("end")
+                print("Closing connection...")
                 socket.sendall(header)
                 break
             elif header[0] == 2: #TODO: chess move
                 data = socket.recv(header[1])
                 piece = (data[0], data[1])
                 move =  (data[2], data[3])
-                print(f"chess {piece}, {move}")
-                callback(piece, data)
+
+                callback(piece, move)
             elif header[0] == 3: #chat
                 print(f"Opponent: {socket.recv(header[1]).decode('utf-8')}")
             else:

@@ -1,12 +1,12 @@
 """
 Chess
 
-@author: Joseph Sierra
-@author: Luke Phillips
+@author: Joseph Sierra, Jasper On,  Luke Phillips
 """
 import numpy as np
 import pygame as pg
 import pygame.draw as dr
+import threading
 import Chess_Client
 
 # Creates a circle that looks nice as a grid of pixels
@@ -183,7 +183,8 @@ class Chess:
     def __init__(self):
         self.board = [[Piece() for x in range(8)] for y in range(8)]
         self.createBoard()
-        self.client = self.createClient()
+        self.client = Chess_Client.Client(self.opponentMoved)
+        threading.Thread(target=self.client.chat).start()
 
     # Creates the default chess board
     def createBoard(self):
@@ -338,10 +339,9 @@ class Chess:
             return 2 # Checkmate
         else:
             return 1 # Stalemate
-        
-    # Creates a client thread from client.py, called in constructor
-    def createClient(self):
-        print("Creating client from client.py")
+    
+    def opponentMoved(self, piece, move):
+        print(f"{piece}, {move}")
             
 # Initialize game
 game = Chess()
@@ -429,8 +429,6 @@ while True:
 
 
 # TODO:
-# thread the multiplayer server, easier if imported from another file
-# ^ 2 threads for it, one for the chat, the other for the game messages
 # multiplayer limited
 #   turns (done so far)
 #   server stuff:
