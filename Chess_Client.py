@@ -2,8 +2,7 @@
 """
 Client
 
-@author: Joseph Sierra
-@author: Luke Phillips
+@author: Joseph Sierra, Jasper On, Luke Phillips
 """
 import socket
 import threading

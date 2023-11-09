@@ -2,8 +2,7 @@
 """
 Server
 
-@author: Joseph Sierra
-@author: Luke Phillips
+@author: Joseph Sierra, Jasper On,  Luke Phillips
 """
 import time
 import socket
