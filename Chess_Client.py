@@ -4,6 +4,7 @@ Client
 
 @author: Joseph Sierra, Jasper On, Luke Phillips
 """
+import time
 import socket
 import threading
 
@@ -32,8 +33,6 @@ class Client:
                 break
             self.sendChat(data)
 
-        self.SocketReference.close()
-
     #   Message format
     #   "0*Hello World!"
     #   the first character is the type of message, 1 = end, 2 = chess move, 3 = chat (not encoded for simplicity)
@@ -43,8 +42,8 @@ class Client:
     # piece = (x,y) coords of the piece
     def sendChess(self, piece, move):
         data = bytearray((2,4)) # code, length, 2 bytes per ordered pair
-        data.extend(piece)
-        data.extend(move)
+        data.extend(bytearray(piece))
+        data.extend(bytearray((move[0] % 256, move[1] % 256))) # when move is sent it can't be negative, mod 256 it
         self.SocketReference.sendall(data)
 
     # Send a move to the server
@@ -55,10 +54,10 @@ class Client:
         self.SocketReference.sendall(data)
     
     def sendEnd(self):
+        self.end = True
         self.SocketReference.sendall(bytes((1,0)))
 
     # Ran on a thread to receive message data
-    # TODO: ADD CALLBACK
     def recv(self, socket, callback):
         while True:
             header = socket.recv(2)
@@ -70,8 +69,11 @@ class Client:
                 break
             elif header[0] == 2: #TODO: chess move
                 data = socket.recv(header[1])
-                piece = (data[0], data[1])
-                move =  (data[2], data[3])
+                piece = (int(data[0]), int(data[1]))
+                move =  [int(data[2]), int(data[3])]
+                for i in range(2):
+                    if move[i] > 10: # negative move, had to be % 256 to fit in a byte
+                        move[i] = move[i] - 256
 
                 callback(piece, move)
             elif header[0] == 3: #chat
@@ -79,5 +81,6 @@ class Client:
             else:
                 print(f"Invalid Message Data: (code: {header[0]}, data_length: {header[1]})")
         
+        time.sleep(3)
         print("Connection closed")
         socket.close()

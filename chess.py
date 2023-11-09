@@ -169,10 +169,6 @@ class Piece:
 class Chess:
 
     # global game variables
-    turn = True # True if client's turn
-    team = teams.none
-    victory = 0 # 0 = none, 1 = stalemate, 2 = checkmate, -numbers are opponent's victory
-    enPassents = []
     allowClicking = True
     selectedPiece = None
     promoteMove = []
@@ -182,6 +178,12 @@ class Chess:
 
     def __init__(self):
         self.board = [[Piece() for x in range(8)] for y in range(8)]
+        
+        self.turn = True # True if client's turn
+        self.team = teams.none
+        self.victory = 0 # 0 = none, 1 = stalemate, 2 = checkmate, -numbers are opponent's victory
+        self.enPassents = []
+
         self.createBoard()
         self.client = Chess_Client.Client(self.opponentMoved)
         threading.Thread(target=self.client.chat).start()
@@ -223,18 +225,19 @@ class Chess:
         board[x][y] = Piece()
 
     # Moves a piece on the functional board, and updates/checks for fringe cases (en passents, checks, castling, etc)
-    def finalMovePiece(board, x, y, move):
-        for e in Chess.enPassents: # Update en passent candidates
+    def finalMovePiece(self, x, y, move):
+        board = self.board
+        for e in self.enPassents: # Update en passent candidates
             if e[2] > 0:
                 e[2] -= 1
             else:
-                Chess.enPassents.remove(e)
+                self.enPassents.remove(e)
         if board[x][y].piece == types.pawn: # Check if en passent being performed
-            for e in Chess.enPassents:
+            for e in self.enPassents:
                 if x + move[0] == e[0] and y + move[1] == e[1] and board[x][y].team != e[3]:
                     board[x + move[0]][y + move[1] + e[3]] = Piece()
             if abs(move[1]) == 2:
-                Chess.enPassents.append([x,int(y+move[1]/2),1,board[x][y].team])
+                self.enPassents.append([x,int(y+move[1]/2),1,board[x][y].team])
         
         if board[x][y].piece == types.king and abs(move[0]) > 1: # Move the rook with the king when castling
             dir = -1 if move[0] < 0 else 1
@@ -243,14 +246,15 @@ class Chess:
             board[x + move[0] - dir][y] = board[rookX][y]
             board[rookX][y] = Piece()
         # Move the piece
+        print(f"({x},{y}) ({move[0]},{move[1]})")
         team = board[x][y].team
         board[x][y].moved = True
         board[x + move[0]][y + move[1]] = board[x][y]
         board[x][y] = Piece()
 
         # Check checkmate/stalemate
-        v = Chess.checkCheckMate(board,team)
-        Chess.victory = (1 if team == Chess.team else -1)*v
+        v = self.checkCheckMate(team)
+        self.victory = (1 if team == self.team else -1)*v
         # TODO: ACTUALLY DISABLE THINGS AFTER VICTORY
     
     # Draws the board, white=True means draw the board from white's pov
@@ -269,19 +273,21 @@ class Chess:
                     if white:
                         window.blit(self.images[self.board[x][y].team][self.board[x][y].piece - 1],(60*x,60*y))
                     else:
-                        window.blit(self.images[self.board[x][y].team][self.board[x][y].piece - 1],(60*x,60*(7-y)))
+                        window.blit(self.images[self.board[x][y].team][self.board[x][y].piece - 1],(60*(7-x),60*(7-y)))
         # Draw legal moves for selected piece
         if Chess.selectedPiece != None:
-            for m in self.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0], Chess.selectedPiece[1], self.board, Chess.enPassents):
+            for m in self.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0], Chess.selectedPiece[1], self.board, self.enPassents):
                 x = Chess.selectedPiece[0] + m[0]
                 y = Chess.selectedPiece[1] + m[1]
-                if self.board[x][y].team == teams.flip(Chess.team):
-                    if Chess.team == teams.black:
+                if self.board[x][y].team == teams.flip(self.team):
+                    if self.team == teams.black:
                         y = 7 - y
+                        x = 7 - x
                     window.blit(Chess.hoverDot[1], (x*xscale, y*yscale))
                 else:
-                    if Chess.team == teams.black:
+                    if self.team == teams.black:
                         y = 7 - y
+                        x = 7 - x
                     window.blit(Chess.hoverDot[0], (x*xscale, y*yscale))
         # Promotion Gui
         if Chess.promoteGui:
@@ -290,15 +296,15 @@ class Chess:
             window.blit(bgSurface,(width/2 - 3.5*xscale,height/2 - 1.5*yscale))
             i = 0
             for p in (types.bishop, types.knight, types.rook, types.queen):
-                window.blit(self.images[Chess.team][p - 1],(90*i + 75,height/2 - 30))
+                window.blit(self.images[self.team][p - 1],(90*i + 75,height/2 - 30))
                 i += 1
         # Victory Gui
-        if Chess.victory != 0:
+        if self.victory != 0:
             font = pg.font.Font(pg.font.get_default_font(), 80)
-            text = ("Black" if Chess.victory*Chess.team > 0 else "White") + " Wins"
-            if abs(Chess.victory == 1):
+            text = ("Black" if self.victory*self.team > 0 else "White") + " Wins"
+            if abs(self.victory == 1):
                 text = "Stalemate"
-            colors = (((255,255,255),(30,30,30)) if Chess.victory*Chess.team < 0 else ((0,0,0),(230,230,230)))
+            colors = (((255,255,255),(30,30,30)) if self.victory*self.team < 0 else ((0,0,0),(230,230,230)))
             
             bgSurface = pg.Surface((int(font.size(text)[0]*1.05),int(font.size(text)[1]*1.2)))
             bgSurface.fill(colors[1])
@@ -329,23 +335,24 @@ class Chess:
     # Checks board for checkmate and stalemate
     # team is the team of the piece that last moved
     # returns 1 for a stalemate, 2 for checkmate
-    def checkCheckMate(board, team):
+    def checkCheckMate(self, team):
         for y in range(8):
             for x in range(8):
-                if board[x][y].team == teams.flip(team):
-                    if len(board[x][y].getLegalMoves(x,y,board,[])) != 0:
+                if self.board[x][y].team == teams.flip(team):
+                    if len(self.board[x][y].getLegalMoves(x,y,self.board,[])) != 0:
                         return 0
-        if Chess.checkCheck(board, teams.flip(team)):
+        if Chess.checkCheck(self.board, teams.flip(team)):
             return 2 # Checkmate
         else:
             return 1 # Stalemate
     
     def opponentMoved(self, piece, move):
-        print(f"{piece}, {move}")
+        self.finalMovePiece(piece[0],piece[1],move)
+        #print(f"{piece}, {move}")
             
 # Initialize game
 game = Chess()
-Chess.team = teams.white
+game.team = teams.white
 
 # Initialize draw
 width = 480
@@ -370,7 +377,7 @@ while True:
 
     # draw
     window.fill((255,255,255))
-    game.draw(True if Chess.team < 1 else False)
+    game.draw(True if game.team < 1 else False)
     pg.display.update()
 
     if game.allowClicking:
@@ -378,24 +385,27 @@ while True:
             held[0] = True
             if not Chess.promoteGui: # Clicking on the board
                 x, y = int(mPos[0]/60), int(mPos[1]/60)
-                if Chess.team == teams.black: # Convert from draw to board coordinates
+                if game.team == teams.black: # Convert from draw to board coordinates
                     y = 7 - y
+                    x = 7 - x
                 deselect = False
-                if Chess.turn: # If it's player's turn, and there's a piece selected, move to the clicked square (if it's legal)
+                if game.turn: # If it's player's turn, and there's a piece selected, move to the clicked square (if it's legal)
                     if Chess.selectedPiece != None:
                         p = game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]]
-                        if p.team == Chess.team:
-                            if (p.piece == types.pawn) and (Chess.selectedPiece[1] == (1 if p.team == teams.white else 6)) and ((x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]) in game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0],Chess.selectedPiece[1],game.board,Chess.enPassents)): # Promotion setup
+                        if p.team == game.team:
+                            if (p.piece == types.pawn) and (Chess.selectedPiece[1] == (1 if p.team == teams.white else 6)) and ((x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]) in game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0],Chess.selectedPiece[1],game.board,game.enPassents)): # Promotion setup
                                 Chess.promoteGui = True
                                 Chess.promoteMove = [x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]]
                             # If the move is legal, do it
-                            elif (x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]) in game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0],Chess.selectedPiece[1],game.board,Chess.enPassents):
-                                Chess.finalMovePiece(game.board,Chess.selectedPiece[0],Chess.selectedPiece[1],(x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]))
+                            elif (x - Chess.selectedPiece[0],y - Chess.selectedPiece[1]) in game.board[Chess.selectedPiece[0]][Chess.selectedPiece[1]].getLegalMoves(Chess.selectedPiece[0],Chess.selectedPiece[1],game.board,game.enPassents):
+                                move = (x - Chess.selectedPiece[0],y - Chess.selectedPiece[1])
+                                game.finalMovePiece(Chess.selectedPiece[0],Chess.selectedPiece[1],move)
+                                game.client.sendChess(Chess.selectedPiece, move)
                                 deselect = True
 
                 if game.board[x][y].team == teams.none: # If the clicked on square is empty, deselect the piece
                     deselect = True
-                elif game.board[x][y].team == Chess.team: # If the clicked on square has a piece of the player's team, select it
+                elif game.board[x][y].team == game.team: # If the clicked on square has a piece of the player's team, select it
                     Chess.selectedPiece = [x,y]
                 if deselect: 
                     Chess.selectedPiece = None
@@ -407,16 +417,16 @@ while True:
                         temp = (types.bishop, types.knight, types.rook, types.queen)
                         px, py = Chess.selectedPiece
                         game.board[px][py] = Piece(temp[i], game.board[px][py].team)
-                        Chess.finalMovePiece(game.board,px,py,Chess.promoteMove)
+                        game.finalMovePiece(px,py,Chess.promoteMove)
                         Chess.promoteGui = False
         
         # TODO: GET RID OF, UTIL METHODS TO SWITCH SIDES/TEAM
         # Right click switches team, middle click switches turn variable
         if mPressed[1] and not held[1]:
-            Chess.turn = not Chess.turn
+            game.turn = not game.turn
             held[1] = True
         if mPressed[2] and not held[2]:
-            Chess.team = teams.flip(Chess.team)
+            game.team = teams.flip(game.team)
             held[2] = True
 
     # Reset hold
@@ -431,6 +441,7 @@ while True:
 # TODO:
 # multiplayer limited
 #   turns (done so far)
+#   disable everything when someone wins
 #   server stuff:
 #       static server that matches clients
 #       clients are hybrid, once they're matched they just communicate with each other

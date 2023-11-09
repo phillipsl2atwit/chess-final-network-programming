@@ -10,21 +10,6 @@ import threading
 
 Port = 1337
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(('', Port))
-s.listen(2)
-
-print("waiting for Clients")
-
-client1, addr1 = s.accept()
-print(f"connection from {addr1}")
-
-client2, addr2 = s.accept()
-print(f"connection from {addr2}")
-
-print("clients Have been connected")
-
 # listens to a clients messages for end, and parrots everything
 def clientThread(recvFrom, sendTo):
     while True:
@@ -39,12 +24,27 @@ def clientThread(recvFrom, sendTo):
             sendTo.sendall(data)
             print(f"{recvFrom}\n{data}")
 
-threading.Thread(target=clientThread,args=(client1,client2)).start()
-threading.Thread(target=clientThread,args=(client2,client1)).start()
+while True:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('', Port))
+    s.listen(2)
 
-while threading.active_count() > 0:
-    time.sleep(1)
+    print("Waiting for clients")
 
-client1.close()
-client2.close()
-s.close()
+    client1, addr1 = s.accept()
+    print(f"Connection from {addr1}")
+
+    client2, addr2 = s.accept()
+    print(f"Connection from {addr2}")
+
+    print("Clients Have been connected")
+
+    threading.Thread(target=clientThread,args=(client1,client2)).start()
+    threading.Thread(target=clientThread,args=(client2,client1)).start()
+
+    while threading.active_count() > 1:
+        time.sleep(1)
+
+    print("Clients have disconnected")
+    s.close()
