@@ -5,6 +5,7 @@ Server
 @author: Joseph Sierra, Jasper On,  Luke Phillips
 """
 import time
+import random
 import socket
 import threading
 
@@ -38,6 +39,13 @@ while True:
     print(f"Connection from {addr2}")
 
     print("Clients Have been connected")
+    time.sleep(0.2)
+    # randomize teams
+    teams = [0, 2] # team - 1 = actual team, to stay within 0-255
+    random.shuffle(teams)
+    print(teams)
+    client1.sendall(bytearray((4,teams[0])))
+    client2.sendall(bytearray((4,teams[1])))
 
     threading.Thread(target=clientThread,args=(client1,client2)).start()
     threading.Thread(target=clientThread,args=(client2,client1)).start()

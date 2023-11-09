@@ -185,7 +185,7 @@ class Chess:
         self.enPassents = []
 
         self.createBoard()
-        self.client = Chess_Client.Client(self.opponentMoved)
+        self.client = Chess_Client.Client(self.opponentMoved, self.syncTeam)
         threading.Thread(target=self.client.chat).start()
 
     # Creates the default chess board
@@ -200,6 +200,16 @@ class Chess:
     def createRow(self, y, types, teams):
         for x in range(8):
             self.board[x][y] = Piece(types[x], teams[x])
+    
+    # Callback function for the client thread to move pieces
+    def opponentMoved(self, piece, move):
+        self.finalMovePiece(piece[0],piece[1],move)
+
+    # Callback function for the client thread to set game.team and reset the board
+    def syncTeam(self, team):
+        self.team = team
+        print(self.team)
+        self.createBoard()
 
     # Loads the individual chess piece images from the sprite sheet into Chess.images[]
     # Also creates the images used for showing valid moves from createCircle
@@ -344,9 +354,6 @@ class Chess:
             return 2 # Checkmate
         else:
             return 1 # Stalemate
-    
-    def opponentMoved(self, piece, move):
-        self.finalMovePiece(piece[0],piece[1],move)
             
 # Initialize game
 game = Chess()
@@ -375,7 +382,8 @@ while True:
 
     # draw
     window.fill((255,255,255))
-    game.draw(True if game.team < 1 else False)
+    #print(game.team)
+    game.draw(True if (game.team < 1) else False)
     pg.display.update()
 
     if game.allowClicking:
@@ -437,10 +445,7 @@ while True:
 
 
 # TODO:
-# multiplayer limited
-#   turns (done so far)
+#   turns
 #   disable everything when someone wins
-#   server stuff:
-#       static server that matches clients
-#       clients are hybrid, once they're matched they just communicate with each other
-# clean utility stuff like prints
+#   make server randomly determine sides (needs new message code)
+#       reset board when message received and set team
