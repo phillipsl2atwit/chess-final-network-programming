@@ -1,3 +1,9 @@
+"""
+Chess
+
+@author: Joseph Sierra
+@author: Luke Phillips
+"""
 import numpy as np
 import pygame as pg
 import pygame.draw as dr
