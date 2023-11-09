@@ -179,7 +179,7 @@ class Chess:
     def __init__(self):
         self.board = [[Piece() for x in range(8)] for y in range(8)]
         
-        self.turn = True # True if client's turn
+        self.turn = False # True if client's turn
         self.team = teams.none
         self.victory = 0 # 0 = none, 1 = stalemate, 2 = checkmate, -numbers are opponent's victory
         self.enPassents = []
@@ -190,6 +190,8 @@ class Chess:
 
     # Creates the default chess board
     def createBoard(self):
+        self.board = [[Piece() for x in range(8)] for y in range(8)]
+
         initRowOrder = [types.rook, types.knight, types.bishop, types.queen, types.king, types.bishop, types.knight, types.rook]
         self.createRow(0, initRowOrder, teams.blackRow)
         self.createRow(1, types.row(types.pawn), teams.blackRow)
@@ -208,7 +210,7 @@ class Chess:
     # Callback function for the client thread to set game.team and reset the board
     def syncTeam(self, team):
         self.team = team
-        print(self.team)
+        self.turn = True if self.team == teams.white else False
         self.createBoard()
 
     # Loads the individual chess piece images from the sprite sheet into Chess.images[]
@@ -261,10 +263,14 @@ class Chess:
         board[x + move[0]][y + move[1]] = board[x][y]
         board[x][y] = Piece()
 
+        self.turn = not self.turn
+
         # Check checkmate/stalemate
         v = self.checkCheckMate(team)
         self.victory = (1 if team == self.team else -1)*v
-        # TODO: ACTUALLY DISABLE THINGS AFTER VICTORY
+        if self.victory != 0:
+            self.turn = False
+            self.allowClicking = False
     
     # Draws the board, white=True means draw the board from white's pov
     def draw(self, white=True):
@@ -382,7 +388,6 @@ while True:
 
     # draw
     window.fill((255,255,255))
-    #print(game.team)
     game.draw(True if (game.team < 1) else False)
     pg.display.update()
 
@@ -425,27 +430,7 @@ while True:
                         game.board[px][py] = Piece(temp[i], game.board[px][py].team)
                         game.finalMovePiece(px,py,Chess.promoteMove)
                         Chess.promoteGui = False
-        
-        # TODO: GET RID OF, UTIL METHODS TO SWITCH SIDES/TEAM
-        # Right click switches team, middle click switches turn variable
-        if mPressed[1] and not held[1]:
-            game.turn = not game.turn
-            held[1] = True
-        if mPressed[2] and not held[2]:
-            game.team = teams.flip(game.team)
-            held[2] = True
 
     # Reset hold
     if not mPressed[0]:
         held[0] = False
-    if not mPressed[1]:
-        held[1] = False
-    if not mPressed[2]:
-        held[2] = False
-
-
-# TODO:
-#   turns
-#   disable everything when someone wins
-#   make server randomly determine sides (needs new message code)
-#       reset board when message received and set team

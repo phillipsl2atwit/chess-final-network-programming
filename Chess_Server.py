@@ -43,7 +43,6 @@ while True:
     # randomize teams
     teams = [0, 2] # team - 1 = actual team, to stay within 0-255
     random.shuffle(teams)
-    print(teams)
     client1.sendall(bytearray((4,teams[0])))
     client2.sendall(bytearray((4,teams[1])))
 
