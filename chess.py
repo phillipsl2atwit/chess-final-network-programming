@@ -239,39 +239,38 @@ class Chess:
     # Moves a piece on the functional board, and updates/checks for fringe cases (en passents, checks, castling, etc)
     def finalMovePiece(self, x, y, move):
         board = self.board
-        if move in board[x][y].getLegalMoves(x,y,board,self.enPassents):
-            for e in self.enPassents: # Update en passent candidates
-                if e[2] > 0:
-                    e[2] -= 1
-                else:
-                    self.enPassents.remove(e)
-            if board[x][y].piece == types.pawn: # Check if en passent being performed
-                for e in self.enPassents:
-                    if x + move[0] == e[0] and y + move[1] == e[1] and board[x][y].team != e[3]:
-                        board[x + move[0]][y + move[1] + e[3]] = Piece()
-                if abs(move[1]) == 2:
-                    self.enPassents.append([x,int(y+move[1]/2),1,board[x][y].team])
-            
-            if board[x][y].piece == types.king and abs(move[0]) > 1: # Move the rook with the king when castling
-                dir = -1 if move[0] < 0 else 1
-                rookX = 0 if move[0] < 0 else 7
-                board[rookX][y].moved = True
-                board[x + move[0] - dir][y] = board[rookX][y]
-                board[rookX][y] = Piece()
-            # Move the piece
-            team = board[x][y].team
-            board[x][y].moved = True
-            board[x + move[0]][y + move[1]] = board[x][y]
-            board[x][y] = Piece()
+        for e in self.enPassents: # Update en passent candidates
+            if e[2] > 0:
+                e[2] -= 1
+            else:
+                self.enPassents.remove(e)
+        if board[x][y].piece == types.pawn: # Check if en passent being performed
+            for e in self.enPassents:
+                if x + move[0] == e[0] and y + move[1] == e[1] and board[x][y].team != e[3]:
+                    board[x + move[0]][y + move[1] + e[3]] = Piece()
+            if abs(move[1]) == 2:
+                self.enPassents.append([x,int(y+move[1]/2),1,board[x][y].team])
+        
+        if board[x][y].piece == types.king and abs(move[0]) > 1: # Move the rook with the king when castling
+            dir = -1 if move[0] < 0 else 1
+            rookX = 0 if move[0] < 0 else 7
+            board[rookX][y].moved = True
+            board[x + move[0] - dir][y] = board[rookX][y]
+            board[rookX][y] = Piece()
+        # Move the piece
+        team = board[x][y].team
+        board[x][y].moved = True
+        board[x + move[0]][y + move[1]] = board[x][y]
+        board[x][y] = Piece()
 
-            self.turn = not self.turn
+        self.turn = not self.turn
 
-            # Check checkmate/stalemate
-            v = self.checkCheckMate(team)
-            self.victory = (1 if team == self.team else -1)*v
-            if self.victory != 0:
-                self.turn = False
-                self.allowClicking = False
+        # Check checkmate/stalemate
+        v = self.checkCheckMate(team)
+        self.victory = (1 if team == self.team else -1)*v
+        if self.victory != 0:
+            self.turn = False
+            self.allowClicking = False
     
     # Draws the board, white=True means draw the board from white's pov
     def draw(self, white=True):
